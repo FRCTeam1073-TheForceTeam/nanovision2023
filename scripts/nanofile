@@ -1,0 +1,10 @@
+#!/bin/sh
+echo Recording File $1
+
+gst-launch-1.0 -v nvarguscamerasrc do-timestamp=true ! \
+'video/x-raw(memory:NVMM),format=(string)NV12, width=(int)1280, height=(int)720, framerate=60/1' ! \
+nvvidconv flip-method=0 ! \
+'video/x-raw(memory:NVMM), width=(int)640, height=(int)360, format=(string)I420' ! \
+ omxh264enc  control-rate=2 bitrate=1000000 profile=1 preset-level=1 ! \
+'video/x-h264, framerate=60/1, stream-format=(string)byte-stream' ! h264parse ! \
+qtmux ! filesink location=$1 -e

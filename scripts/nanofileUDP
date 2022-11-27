@@ -1,0 +1,14 @@
+#!/bin/sh
+echo Transmitting Video To Host $1
+echo Saving to File $2
+
+gst-launch-1.0 -vv nvarguscamerasrc do-timestamp=true ! \
+'video/x-raw(memory:NVMM),format=(string)NV12, width=(int)1280, height=(int)720, framerate=60/1' ! \
+nvvidconv flip-method=0 ! \
+'video/x-raw(memory:NVMM), width=(int)640, height=(int)360, format=(string)I420' ! tee name=t ! \
+queue ! omxh264enc control-rate=2 bitrate=333000 profile=1 preset-level=1 ! \
+'video/x-h264, framerate=60/1, stream-format=(string)byte-stream'! h264parse !\
+rtph264pay config-interval=1 ! udpsink host=$1 port=5801 t. ! \
+queue ! omxh264enc control-rate=2 bitrate=600000 profile=1 preset-level=1 ! \
+'video/x-h264, framerate=60/1, stream-format=(string)byte-stream' \
+! h264parse ! qtmux ! filesink location=$2 -e

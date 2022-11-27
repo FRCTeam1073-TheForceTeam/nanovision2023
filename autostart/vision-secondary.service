@@ -1,0 +1,17 @@
+# Vision Secondary Service
+[Unit]
+Description=FRC 1073 Vision Secondary Service
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=team1073
+WorkingDirectory=/home/team1073/Projects/vision20/scripts
+ExecStart=/home/team1073/Projects/vision20/scripts/webcam /dev/video0 10.10.73.10
+#ExecStart=/home/team1073/Projects/vision20/scripts/webcamfileudp_auto /dev/video0 10.10.73.10
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target
