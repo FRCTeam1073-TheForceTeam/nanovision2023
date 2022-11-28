@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import math
+import apriltag
 
 
 # Capture Video and set resolution from gstreamer pipeline
@@ -24,20 +25,46 @@ if output.isOpened():
 else:
     print("Video output pipeline creation failed!")
 
+detectorOptions = apriltag.DetectorOptions(families="tag36h11")
+detector = apriltag.Detector(detectorOptions)
+
+
 while(True):
 
-    # Capture frame-by-frame
+    # Capture frame-by-frame:
     ret, frame = capture.read()
-    
-    #    frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    #    edges = cv2.Canny(frame2, 50, 200, None, 3)
-    #    cv2.imshow("Edges", edges)
+
+    # Create greyscale image from input:
+    image  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    tags = detector.detect(image);
+
+    if len(tags) > 0:
+        print("{} total tags detected".format(len(tags)))
 
     # Draw target lines over the video.
-    cv2.line(frame, (320,0), (320,360), (50,100,0), 2)
-    cv2.line(frame, (0,180), (640,180), (50,100,0), 2)
-    output.write(frame);
+    for tag in tags:
+        (ptA, ptB, ptC, ptD) = tag.corners;
 
+        ptB = (int(ptB[0]), int(ptB[1]))
+        ptC = (int(ptC[0]), int(ptC[1]))
+        ptD = (int(ptD[0]), int(ptD[1]))
+        ptA = (int(ptA[0]), int(ptA[1]))        
+        
+        cv2.line(frame, ptA, ptB, (50,100,0), 2)
+        cv2.line(frame, ptB, ptC, (50,100,0), 2)
+        cv2.line(frame, ptC, ptD, (50,100,0), 2)
+        cv2.line(frame, ptD, ptA, (50,100,0), 2)
+
+        (cX, cY) = (int(tag.center[0]), int(tag.center[1]))
+        cv2.circle(frame, (cX,cY), 5, (0,0,255), -1)
+
+        tagId = "{}".format(tag.tag_id)
+        
+        cv2.putText(frame, tagId, (ptA[0], ptA[1]-15),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+        
+    output.write(frame);
 
 # When everything done, release the capture
 capture.release()
