@@ -156,6 +156,18 @@ The NetworkTable interface allows us to have the operator select modes
 of cameras, switch between overlays and allows our vision code to send
 data to autonomy and operator assist commands.
 
+# OpenCV Upgrade
+
+The OpenCV shipped with the system image is very old and does not take
+advantage of CUDA processing on the Jetson. There is a process
+described on the website:
+
+https://qengineering.eu/install-opencv-4.5-on-jetson-nano.html
+
+This describes how to set up and build newer versions of OpenCV that
+include CUDA hardware acceleration. This process takes a long time to
+run, but we follow it and install OpenCV 4.5.5 to get faster CV
+processing and access to the latest features of OpenCV in our code.
 
 
 
