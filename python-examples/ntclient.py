@@ -8,6 +8,7 @@ if len(sys.argv) < 2:
     print("Error: specify an IP to connect to!")
     exit(0)
 
+#lets user set sys id (frc1073, 127.0.0.1)
 ip = sys.argv[1]
 
 NetworkTables.initialize(server=ip)
@@ -21,4 +22,5 @@ while True:
 #    print(table.getNumberArray("cam_1_wline", [-1]))
 #    print("data_enable")
 #    print(table.getBoolean("data_enable", False))
-    time.sleep(1.0)
+     print(table.getNumber("numTags", -1))
+     time.sleep(1.0)

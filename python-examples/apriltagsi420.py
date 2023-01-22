@@ -5,7 +5,9 @@ import apriltag
 
 
 # Capture Video and set resolution from gstreamer pipeline
-capture_pipeline = "nvarguscamerasrc do-timestamp=true ! video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1920,height=(int)1080,framerate=30/1 ! nvvidconv flip-method=0 ! video/x-raw,width=(int)640,height=(int)360,format=(string)BGRx ! videoconvert ! video/x-raw,format=(string)BGR ! appsink emit-signals=True drop=true"
+#capture_pipeline = "nvarguscamerasrc do-timestamp=true ! video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1920,height=(int)1080,framerate=30/1 ! nvvidconv flip-method=0 ! video/x-raw,width=(int)640,height=(int)360,format=(string)BGRx ! videoconvert ! video/x-raw,format=(string)BGR ! appsink emit-signals=True drop=true"
+capture_pipeline = "nvarguscamerasrc do-timestamp=true ! video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1280,height=(int)720,framerate=30/1 ! nvvidconv flip-method=0 ! video/x-raw,width=(int)640,height=(int)360,format=(string)I420 ! appsink emit-signals=True drop=true"
+
 capture = cv2.VideoCapture(capture_pipeline)
 
 
@@ -15,7 +17,7 @@ output_pipeline = "appsrc ! videoconvert ! video/x-raw,format=(string)NV12 ! omx
 output = cv2.VideoWriter(output_pipeline, cv2.CAP_GSTREAMER, 30, (640, 360))
 
 print("OpenCV Version " + cv2.__version__)
-print("CUDA %d"%(cv2.cuda.getCudaEnabledDeviceCount()))
+
 
 if capture.isOpened():
     print("Capture input pipeline created successfully...")
@@ -37,7 +39,7 @@ while(True):
     ret, frame = capture.read()
 
     # Create greyscale image from input:
-    image  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    image  = cv2.cvtColor(frame, cv2.COLOR_YUV2GRAY_I420)
 
     tags = detector.detect(image);
 
@@ -53,20 +55,22 @@ while(True):
         ptD = (int(ptD[0]), int(ptD[1]))
         ptA = (int(ptA[0]), int(ptA[1]))        
         
-        cv2.line(frame, ptA, ptB, (50,100,0), 2)
-        cv2.line(frame, ptB, ptC, (50,100,0), 2)
-        cv2.line(frame, ptC, ptD, (50,100,0), 2)
-        cv2.line(frame, ptD, ptA, (50,100,0), 2)
+        #cv2.line(frame, ptA, ptB, (50,100,0), 2)
+        #//cv2.line(frame, ptB, ptC, (50,100,0), 2)
+        #cv2.line(frame, ptC, ptD, (50,100,0), 2)
+        #cv2.line(frame, ptD, ptA, (50,100,0), 2)
 
-        (cX, cY) = (int(tag.center[0]), int(tag.center[1]))
-        cv2.circle(frame, (cX,cY), 5, (0,0,255), -1)
+        #(cX, cY) = (int(tag.center[0]), int(tag.center[1]))
+        #cv2.circle(frame, (cX,cY), 5, (0,0,255), -1)
 
         tagId = "{}".format(tag.tag_id)
         
-        cv2.putText(frame, tagId, (ptA[0], ptA[1]-15),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+        #cv2.putText(frame, tagId, (ptA[0], ptA[1]-15),
+        #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
         
-    output.write(frame);
+    frame2 = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+    output.write(frame2);
+
 
 # When everything done, release the capture
 capture.release()
