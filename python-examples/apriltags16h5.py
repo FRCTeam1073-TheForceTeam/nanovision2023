@@ -33,7 +33,7 @@ else:
 detectorOptions = apriltag.DetectorOptions(families="tag16h5")
 detector = apriltag.Detector(detectorOptions)
 
-ip = "127.0.0.1"
+ip = "10.10.73.2"
 
 # networktables.startClientTeam(1073)
 # init network tables and "points" it at your robot [via robotpy]
@@ -41,7 +41,7 @@ ip = "127.0.0.1"
 NetworkTables.initialize(server=ip)
 
 table = NetworkTables.getTable("Vision")
-
+table.putNumber('Test', 32)
 while(True):
 
    # print("[INFO] loading image...")
@@ -56,29 +56,44 @@ while(True):
     if len(tags) > 0:
         print("{} total tags detected".format(len(tags)))
 
+    tagOutput = []
+
     # Draw target lines over the video.
     for tag in tags:
         (ptA, ptB, ptC, ptD) = tag.corners;
+        height = abs(ptA[1] - ptC[1])
+        width =  abs(ptA[0] - ptC[0])
+        if height > 10 and width > 10:
+            ptB = (int(ptB[0]), int(ptB[1]))
+            ptC = (int(ptC[0]), int(ptC[1]))
+            ptD = (int(ptD[0]), int(ptD[1]))
+            ptA = (int(ptA[0]), int(ptA[1]))
 
-        ptB = (int(ptB[0]), int(ptB[1]))
-        ptC = (int(ptC[0]), int(ptC[1]))
-        ptD = (int(ptD[0]), int(ptD[1]))
-        ptA = (int(ptA[0]), int(ptA[1]))        
-        
-        cv2.line(frame, ptA, ptB, (50,100,0), 2)
-        cv2.line(frame, ptB, ptC, (50,100,0), 2)
-        cv2.line(frame, ptC, ptD, (50,100,0), 2)
-        cv2.line(frame, ptD, ptA, (50,100,0), 2)
+            cv2.line(frame, ptA, ptB, (50,100,0), 2)
+            cv2.line(frame, ptB, ptC, (50,100,0), 2)
+            cv2.line(frame, ptC, ptD, (50,100,0), 2)
+            cv2.line(frame, ptD, ptA, (50,100,0), 2)
 
-        (cX, cY) = (int(tag.center[0]), int(tag.center[1]))
-        cv2.circle(frame, (cX,cY), 5, (0,0,255), -1)
+            (cX, cY) = (int(tag.center[0]), int(tag.center[1]))
+            cv2.circle(frame, (cX,cY), 5, (0,0,255), -1)
 
-        tagId = "{}".format(tag.tag_id)
-        
-        cv2.putText(frame, tagId, (ptA[0], ptA[1]-15),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
-   #connects with Network Tables, grabs number of tags found 
-    table.putNumber("numTags", len(tags))
+            tagId = "{}".format(tag.tag_id)
+
+            cv2.putText(frame, tagId, (ptA[0], ptA[1]-15),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+
+            tagOutput+= [tag.tag_id, tag.hamming, tag.goodness, tag.decision_margin,
+            tag.homography[0][0], tag.homography[0][1], tag.homography[0][2],
+            tag.homography[1][0], tag.homography[1][1], tag.homography[1][2],
+            tag.homography[2][0], tag.homography[2][1], tag.homography[2][2],
+            tag.center[0], tag.center[1],
+            tag.corners[0][0], tag.corners[0][1],
+            tag.corners[1][0], tag.corners[1][1],
+            tag.corners[2][0], tag.corners[2][1],
+            tag.corners[3][0], tag.corners[3][1]]
+
+   #connects with Network Tables, grabs number of tags found
+    table.putNumberArray("Tags1", tagOutput)
     output.write(frame);
 
 # When everything done, release the capture
