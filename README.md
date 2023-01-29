@@ -1,6 +1,6 @@
 # Vision20
 
-Nanovision code developed in the 2019 off season and 2020 preseason
+Nanovision code developed during the 2022-23 season
 
 # Introduction
 
