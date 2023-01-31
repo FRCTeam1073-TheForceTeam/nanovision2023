@@ -224,7 +224,7 @@ while(True):
 
 # Networking Requirements For Robot Configuration
 
-WiFi must be turned off and disabled.y
+WiFi must be turned off and disabled.
 
 In the IPV4 settings for the first video server.
 
@@ -305,5 +305,31 @@ Note that the autostart files assume you are using user team1073 and
 that you have checked out the vision repository on the nano system at:
 /home/team1073/Projects/vision20
 
+# AprilTag Detection on Robot & Driverstation with Jetson Nano
 
+After making sure you have downloaded gstreamer, make sure you are connected to the robot.
 
+	ping <robot server name>
+
+Now ssh into the Jetson Nano to ping the camera server:
+
+	ssh jetson@<robot server name>
+
+Imput Jetson password: jetson
+
+In a command prompt tab, open a local server on computer to run vision processing window:
+
+	./ windowsplay.bat
+
+Run the AprilTag detection program:
+
+	python3 apriltag16h5.py <laptop IvP4 adress>
+
+# Copy local changes to GitHub
+
+You will need to make a copy of the changes made to python programs while connected to the robot and jetson nano. To copy these files onto your computer in order to upload them to GitHub:
+
+	cd <camera file>
+	scp jetson@<camera server name> : /<file source> .
+
+Remember to commit these changes to GitHub after copying them onto your computer. 
