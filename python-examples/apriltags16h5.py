@@ -69,10 +69,10 @@ while(True):
             ptD = (int(ptD[0]), int(ptD[1]))
             ptA = (int(ptA[0]), int(ptA[1]))
 
-            cv2.line(frame, ptA, ptB, (50,100,0), 2)
-            cv2.line(frame, ptB, ptC, (50,100,0), 2)
-            cv2.line(frame, ptC, ptD, (50,100,0), 2)
-            cv2.line(frame, ptD, ptA, (50,100,0), 2)
+            cv2.line(frame, ptA, ptB, (0,0,250), 2)
+            cv2.line(frame, ptB, ptC, (0,0,250), 2)
+            cv2.line(frame, ptC, ptD, (0,0,250), 2)
+            cv2.line(frame, ptD, ptA, (0,0,250), 2)
 
             (cX, cY) = (int(tag.center[0]), int(tag.center[1]))
             cv2.circle(frame, (cX,cY), 5, (0,0,255), -1)
@@ -88,9 +88,10 @@ while(True):
             tag.homography[2][0], tag.homography[2][1], tag.homography[2][2],
             tag.center[0], tag.center[1],
             tag.corners[0][0], tag.corners[0][1],
-            tag.corners[1][0], tag.corners[1][1],
+            tag.corners[3][0], tag.corners[3][1],
             tag.corners[2][0], tag.corners[2][1],
-            tag.corners[3][0], tag.corners[3][1]]
+            tag.corners[1][0], tag.corners[1][1]]
+
 
    #connects with Network Tables, grabs number of tags found
     table.putNumberArray("Tags1", tagOutput)
