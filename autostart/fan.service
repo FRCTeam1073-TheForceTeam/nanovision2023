@@ -1,0 +1,15 @@
+# Vision Primary Service
+[Unit]
+Description=FRC 1073 FAN Service
+After=network.target
+
+[Service]
+Type=simple
+Restart=never
+RestartSec=1
+User=root
+WorkingDirectory=/home/jetson/nanovision2023/autostart
+ExecStart=/home/jetson/nanovision2023/autostart/fan_on
+
+[Install]
+WantedBy=multi-user.target

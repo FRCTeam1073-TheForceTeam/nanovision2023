@@ -1,0 +1,4 @@
+#!/bin/bash
+sleep 30
+echo 255 > /sys/devices/pwm-fan/target_pwm
+

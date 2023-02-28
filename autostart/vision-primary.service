@@ -7,9 +7,9 @@ After=network.target
 Type=simple
 Restart=always
 RestartSec=1
-User=team1073
-WorkingDirectory=/home/team1073/vision20/scripts
-ExecStart=/home/team1073/vision20/scripts/nano 10.10.73.10
+User=jetson
+WorkingDirectory=/home/jetson/nanovision2023/server
+ExecStart=/home/jetson/nanovision2023/server/vision-server.py /dev/video1 FrontVision 10.10.73.5 5801
 
 [Install]
 WantedBy=multi-user.target
