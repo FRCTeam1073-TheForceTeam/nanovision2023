@@ -53,17 +53,7 @@ NetworkTables.initialize(server=networkTableIP)
 # Create network table with given table name:
 table = NetworkTables.getTable(networkTable)
 
-
-# Main vision loop:
-while(True):
-
-   # print("[INFO] loading image...")
-    # Capture frame-by-frame:
-    ret, frame = capture.read()
-
-    # Create greyscale image from input:
-    image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
+def tagDetection(image, frame):
     tags = detector.detect(image);
 
     if len(tags) > 0:
@@ -77,38 +67,114 @@ while(True):
         height = abs(ptA[1] - ptC[1])
         width =  abs(ptA[0] - ptC[0])
         if height > 10 and width > 10:
-            ptB = (int(ptB[0]), int(ptB[1]))
-            ptC = (int(ptC[0]), int(ptC[1]))
-            ptD = (int(ptD[0]), int(ptD[1]))
-            ptA = (int(ptA[0]), int(ptA[1]))
+            aspectratio = width/height
+            if aspectratio > 0.3 and aspectratio < 3.0:
+                ptB = (int(ptB[0]), int(ptB[1]))
+                ptC = (int(ptC[0]), int(ptC[1]))
+                ptD = (int(ptD[0]), int(ptD[1]))
+                ptA = (int(ptA[0]), int(ptA[1]))
 
-            cv2.line(frame, ptA, ptB, (0,0,250), 2)
-            cv2.line(frame, ptB, ptC, (0,0,250), 2)
-            cv2.line(frame, ptC, ptD, (0,0,250), 2)
-            cv2.line(frame, ptD, ptA, (0,0,250), 2)
+                cv2.line(frame, ptA, ptB, (0,0,250), 2)
+                cv2.line(frame, ptB, ptC, (0,0,250), 2)
+                cv2.line(frame, ptC, ptD, (0,0,250), 2)
+                cv2.line(frame, ptD, ptA, (0,0,250), 2)
 
-            (cX, cY) = (int(tag.center[0]), int(tag.center[1]))
-            cv2.circle(frame, (cX,cY), 5, (0,0,255), -1)
+                (cX, cY) = (int(tag.center[0]), int(tag.center[1]))
+                cv2.circle(frame, (cX,cY), 5, (0,0,255), -1)
 
-            tagId = "{}".format(tag.tag_id)
+                tagId = "{}".format(tag.tag_id)
 
-            cv2.putText(frame, tagId, (ptA[0], ptA[1]-15),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                cv2.putText(frame, tagId, (ptA[0], ptA[1]-15),
+                  cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
 
-            tagOutput+= [tag.tag_id, tag.hamming, tag.goodness, tag.decision_margin,
-            tag.homography[0][0], tag.homography[0][1], tag.homography[0][2],
-            tag.homography[1][0], tag.homography[1][1], tag.homography[1][2],
-            tag.homography[2][0], tag.homography[2][1], tag.homography[2][2],
-            tag.center[0], tag.center[1],
-            tag.corners[0][0], tag.corners[0][1],
-            tag.corners[3][0], tag.corners[3][1],
-            tag.corners[2][0], tag.corners[2][1],
-            tag.corners[1][0], tag.corners[1][1]]
+                tagOutput+= [tag.tag_id, tag.hamming, tag.goodness, tag.decision_margin,
+                tag.homography[0][0], tag.homography[0][1], tag.homography[0][2],
+                tag.homography[1][0], tag.homography[1][1], tag.homography[1][2],
+                tag.homography[2][0], tag.homography[2][1], tag.homography[2][2],
+                tag.center[0], tag.center[1],
+                tag.corners[0][0], tag.corners[0][1],
+                tag.corners[3][0], tag.corners[3][1],
+                tag.corners[2][0], tag.corners[2][1],
+                tag.corners[1][0], tag.corners[1][1]]
 
 
    #connects with Network Tables, grabs number of tags found
     table.putNumberArray("Tags1", tagOutput)
+
+
+
+# Cube Detector
+cubeLower = (5,140,58)
+cubeUpper = (235,220,98)
+
+#image is the thing we are prossesing, frame is the thing we are drawing output on
+def cubeDetection(image, frame):
+    mask = cv2.inRange(image, cubeLower, cubeUpper)
+    mask = cv2.erode(mask, None, iterations = 2)
+    mask = cv2.dilate(mask, None, iterations = 2)
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+   # cv2.drawContours(frame, contours, -3, (0,255,0), 2)
+    cubes = []
+    for contour in contours:
+        x,y,w,h = cv2.boundingRect(contour)
+        if w*h > 100 and w/h < 2.0 and w/h > 0.5:
+            cubes += [x,y,w,h]
+            cv2.circle(frame,(int(x+w/2),int(y+h/2)),int(w/2),(0,0,255),2)
+
+    print("Total Cubes:{}".format(len(cubes)))
+    table.putNumberArray("Cubes", cubes)
+    return mask
+
+
+
+
+# Cone Detector
+coneLower = (5,110,180)
+coneUpper = (235,150,230)
+
+#image is the thing we are prossesing, frame is the thing we are drawing output on
+def coneDetection(image, frame):
+    mask = cv2.inRange(image, coneLower, coneUpper)
+    mask = cv2.erode(mask, None, iterations = 2)
+    mask = cv2.dilate(mask, None, iterations = 2)
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cv2.drawContours(frame, contours, -3, (0,255,0), 2)
+    print("Total Cones:{}".format(len(contours)))
+    return mask
+
+# Main vision loop:
+visionCycle = 0
+mask = []
+
+while(True):
+
+   # print("[INFO] loading image...")
+    # Capture frame-by-frame:
+    ret, frame = capture.read()
+
+    # Create greyscale image from input:
+    if visionCycle == 0:
+        image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        tagDetection(image, frame)
+
+    if visionCycle == 1:
+        LABframe = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+        mask = cubeDetection(LABframe, frame)
+       # frame = cv2.bitwise_and(frame, frame, mask = mask)
+
+    if visionCycle == 2:
+        LABframe = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+        mask = coneDetection(LABframe, frame)
+       # frame = cv2.bitwise_and(frame, frame, mask = mask)
+
+   # if len(mask) > 0:
+        # frame = cv2.bitwise_and(frame, frame, mask = mask)
+
     output.write(frame);
+    visionCycle = visionCycle + 1
+
+    if visionCycle > 2:
+        visionCycle = 0
 
 # When everything done, release the capture
 capture.release()
