@@ -7,15 +7,22 @@ import apriltag
 from networktables import NetworkTables
 import sys
 import time
+import os
 
 if len(sys.argv)<5:
     print("Server {videoDevice} {NetworkTable} {DestinationIP} {DestinationPort}")
     exit()
 
+
 captureDevice=sys.argv[1]
 networkTable=sys.argv[2]
 destinationIP=sys.argv[3]
 destinationPort=sys.argv[4]
+
+#set the camera controls
+cameraControlCommand="v4l2-ctl -d %s --set-ctrl exposure_auto=1,exposure_absolute=150,white_balance_temperature_auto=0,white_balance_temperature=4500,gain=6"%captureDevice 
+if os.system(cameraControlCommand) != 0:
+    print("error setting Camera controls")
 
 # Capture Video and set resolution from gstreamer pipeline
 #capture_pipeline = "nvarguscamerasrc do-timestamp=true ! video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1920,height=(int)1080,framerate=30/1 ! nvvidconv flip-method=0 ! video/x-raw,width=(int)640,height=(int)360,format=(string)BGRx ! videoconvert ! video/x-raw,format=(string)BGR ! appsink emit-signals=True drop=true"#capture_pipeline = "nvarguscamerasrc do-timestamp=true ! video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1920,height=(int)1080,framerate=30/1 ! nvvidconv flip-method=0 ! video/x-raw,width=(int)640,height=(int)360,format=(string)BGRx ! videoconvert ! video/x-raw,format=(string)BGR ! appsink emit-signals=True drop=true"
@@ -104,8 +111,8 @@ def tagDetection(image, frame):
 
 
 # Cube Detector
-cubeLower = (5,140,58)
-cubeUpper = (235,220,98)
+cubeLower = (5,100,70)
+cubeUpper = (235,220,110)
 
 #image is the thing we are prossesing, frame is the thing we are drawing output on
 def cubeDetection(image, frame):
@@ -113,15 +120,16 @@ def cubeDetection(image, frame):
     mask = cv2.erode(mask, None, iterations = 2)
     mask = cv2.dilate(mask, None, iterations = 2)
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-   # cv2.drawContours(frame, contours, -3, (0,255,0), 2)
+  #  cv2.drawContours(frame, contours, -3, (0,255,0), 2)
     cubes = []
     for contour in contours:
         x,y,w,h = cv2.boundingRect(contour)
-        if w*h > 100 and w/h < 2.0 and w/h > 0.5:
+        area = w*h
+        if area > 300 and w/h < 2.0 and w/h > 0.5:
             cubes += [x,y,w,h]
-            cv2.circle(frame,(int(x+w/2),int(y+h/2)),int(w/2),(0,0,255),2)
+            cv2.rectangle(frame,(int(x),int(y)),(int(x+w),int(y+h)),(0,0,255),2)
 
-    print("Total Cubes:{}".format(len(cubes)))
+    print("Total Cubes:{}".format(len(cubes)/4))
     table.putNumberArray("Cubes", cubes)
     return mask
 
@@ -129,8 +137,8 @@ def cubeDetection(image, frame):
 
 
 # Cone Detector
-coneLower = (5,110,180)
-coneUpper = (235,150,230)
+coneLower = (5,80,180)
+coneUpper = (235,180,230)
 
 #image is the thing we are prossesing, frame is the thing we are drawing output on
 def coneDetection(image, frame):
@@ -138,8 +146,17 @@ def coneDetection(image, frame):
     mask = cv2.erode(mask, None, iterations = 2)
     mask = cv2.dilate(mask, None, iterations = 2)
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cv2.drawContours(frame, contours, -3, (0,255,0), 2)
-    print("Total Cones:{}".format(len(contours)))
+    #cv2.drawContours(frame, contours, -3, (0,255,0), 2)
+    cones = []
+    for contour in contours:
+        x,y,w,h = cv2.boundingRect(contour)
+        area = w*h
+        if area > 300 and w/h < 2.0 and w/h > 0.5:
+            cones += [x,y,w,h]
+            cv2.rectangle(frame,(int(x),int(y)),(int(x+w),int(y+h)),(0,0,255),2)
+
+    print("Total Cones:{}".format(len(cones)/4))
+    table.putNumberArray("Cones", cones)
     return mask
 
 # Main vision loop:
@@ -152,6 +169,9 @@ while(True):
     # Capture frame-by-frame:
     ret, frame = capture.read()
 
+   # LABframe = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+    #mask = coneDetection(LABframe, frame)
+
     # Create greyscale image from input:
     if visionCycle == 0:
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -160,12 +180,12 @@ while(True):
     if visionCycle == 1:
         LABframe = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
         mask = cubeDetection(LABframe, frame)
-       # frame = cv2.bitwise_and(frame, frame, mask = mask)
+        #frame = cv2.bitwise_and(frame, frame, mask = mask)
 
     if visionCycle == 2:
         LABframe = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
         mask = coneDetection(LABframe, frame)
-       # frame = cv2.bitwise_and(frame, frame, mask = mask)
+        #frame = cv2.bitwise_and(frame, frame, mask = mask)
 
    # if len(mask) > 0:
         # frame = cv2.bitwise_and(frame, frame, mask = mask)
@@ -179,3 +199,4 @@ while(True):
 # When everything done, release the capture
 capture.release()
 output.release()
+
