@@ -196,6 +196,11 @@ while(True):
     if visionCycle > 2:
         visionCycle = 0
 
+    # Draws a hard coded line down the center middle of the camera stream.
+    # More... intensity
+    cv2.line(frame, (450,0), (450,360), (250,0,150), 3)
+    cv2.line(frame, (415,0), (415,360), (0,250,250), 3)
+
 # When everything done, release the capture
 capture.release()
 output.release()
